@@ -1,10 +1,17 @@
 'use client';
 
+import { useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
 
 export default function LandingPage() {
   const { user, loading } = useAuth();
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.location.search.includes('code=')) {
+      window.location.href = `/auth/callback${window.location.search}`;
+    }
+  }, []);
 
   return (
     <div className="flex min-h-screen flex-col justify-between bg-[#fbfbfa] text-slate-900 selection:bg-indigo-500 selection:text-white">
