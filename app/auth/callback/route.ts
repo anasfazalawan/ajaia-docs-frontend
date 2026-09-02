@@ -6,9 +6,15 @@ import { cookies } from 'next/headers';
 // LinkedIn/X) hands back an auth code. We exchange it for a session and
 // set the session cookie before sending the user on to the dashboard.
 export async function GET(request: Request) {
-  const { searchParams, origin } = new URL(request.url);
-  const code = searchParams.get('code');
-  const next = searchParams.get('next') ?? '/dashboard';
+  const requestUrl = new URL(request.url);
+  const code = requestUrl.searchParams.get('code');
+  const next = requestUrl.searchParams.get('next') ?? '/dashboard';
+
+  // Prefer explicit NEXT_PUBLIC_SITE_URL, then reverse proxy headers (Vercel), then request origin
+  const envSiteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim().replace(/\/+$/, '');
+  const forwardedHost = request.headers.get('x-forwarded-host');
+  const forwardedProto = request.headers.get('x-forwarded-proto') || 'https';
+  const origin = envSiteUrl || (forwardedHost ? `${forwardedProto}://${forwardedHost}` : requestUrl.origin);
 
   if (code) {
     const cookieStore = cookies();

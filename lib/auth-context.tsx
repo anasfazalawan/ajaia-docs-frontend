@@ -20,6 +20,17 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
+function getSiteUrl(): string {
+  const envUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim();
+  if (envUrl) {
+    return envUrl.replace(/\/+$/, '');
+  }
+  if (typeof window !== 'undefined') {
+    return window.location.origin;
+  }
+  return '';
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const supabase = useMemo(() => createClient(), []);
   const [session, setSession] = useState<Session | null>(null);
@@ -52,12 +63,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signUpWithPassword = useCallback(
     async (email: string, password: string, name?: string) => {
+      const siteUrl = getSiteUrl();
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: name ? { full_name: name, name } : undefined,
-          emailRedirectTo: `${typeof window !== 'undefined' ? window.location.origin : ''}/auth/callback?next=/dashboard`,
+          emailRedirectTo: `${siteUrl}/auth/callback?next=/dashboard`,
         },
       });
 
@@ -79,9 +91,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signInWithOAuth = useCallback(
     async (provider: 'google' = 'google') => {
+      const siteUrl = getSiteUrl();
       await supabase.auth.signInWithOAuth({
         provider,
-        options: { redirectTo: `${typeof window !== 'undefined' ? window.location.origin : ''}/auth/callback?next=/dashboard` },
+        options: {
+          redirectTo: `${siteUrl}/auth/callback?next=/dashboard`,
+        },
       });
     },
     [supabase],
